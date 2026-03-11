@@ -117,18 +117,29 @@ function App() {
           </p>
         </div>
       ) : (
-        <ul className="todo-list">
-          {filteredTodos.map(todo => (
-            <li key={todo.id} className="todo-item">
-              <div
-                className={`checkbox ${todo.completed ? 'checked' : ''}`}
-                onClick={() => toggleTodo(todo.id)}
-              />
-              <span className={`text ${todo.completed ? 'completed' : ''}`}>{todo.text}</span>
-              <button className="delete-btn" onClick={() => deleteTodo(todo.id)}>✕</button>
-            </li>
-          ))}
-        </ul>
+        <table className="todo-table">
+          <thead>
+            <tr>
+              <th>Title</th>
+              <th>Description</th>
+              <th>Creation Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTodos.map(todo => (
+              <tr key={todo.id} className="todo-item">
+                <td>{todo.text}</td>
+                <td>{todo.description || 'No description'}</td>
+                <td>{new Date(todo.id).toLocaleString()}</td>
+                <td>
+                  <button onClick={() => toggleTodo(todo.id)}>Mark as Done</button>
+                  <button onClick={() => deleteTodo(todo.id)}>Delete</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
 
       {/* Footer with SDK badge */}
