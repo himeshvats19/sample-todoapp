@@ -1,20 +1,14 @@
-.add-todo button:last-child {
-  background: var(--accent);
+.copy-btn {
+  background: none;
   border: none;
-  border-radius: var(--radius);
-  padding: 14px 24px;
-  font-size: 1rem;
-  font-weight: 600;
-  color: white;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: background 0.2s, transform 0.1s;
-  white-space: nowrap;
+  font-size: 1.1rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
 }
 
-.add-todo button:last-child:hover {
-  background: var(--accent-hover);
-}
-
-.add-todo button:last-child:active {
-  transform: scale(0.97);
+.copy-btn:hover {
+  color: var(--accent);
 }

@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+function useFeatureFlag(flagKey) {
+  const [enabled, setEnabled] = useState(!!window.FeatureStudio?.flags?.[flagKey]);
+  useEffect(() => {
+    const handleFlags = () => setEnabled(!!window.FeatureStudio?.flags?.[flagKey]);
+    window.addEventListener('feature-studio-flags-loaded', handleFlags);
+    handleFlags();
+    return () => window.removeEventListener('feature-studio-flags-loaded', handleFlags);
+  }, [flagKey]);
+  return enabled;
+}
+
 function App() {
   const [todos, setTodos] = useState(() => {
     const saved = localStorage.getItem('todos')
@@ -54,6 +65,13 @@ function App() {
     document.body.removeChild(link);
     alert('Download complete!');
   }
+
+  const copyButtonEnabled = useFeatureFlag('copy-button-for-tasks');
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied');
+  };
 
   return (
     <div className="app">
@@ -125,6 +143,9 @@ function App() {
                 onClick={() => toggleTodo(todo.id)}
               />
               <span className={`text ${todo.completed ? 'completed' : ''}`}>{todo.text}</span>
+              {copyButtonEnabled && (
+                <button className="copy-btn" onClick={() => copyToClipboard(todo.text)}>📋</button>
+              )}
               <button className="delete-btn" onClick={() => deleteTodo(todo.id)}>✕</button>
             </li>
           ))}
