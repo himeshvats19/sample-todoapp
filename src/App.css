@@ -1,36 +1,20 @@
-.todo-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-.todo-table th,
-.todo-table td {
-  border: 1px solid var(--border);
-  padding: 12px;
-  text-align: left;
-}
-
-.todo-table th {
-  background: var(--bg-card);
-  color: var(--text-secondary);
-}
-
-.todo-table tr:hover {
-  background: var(--bg-secondary);
-}
-
-.todo-item button {
-  margin-right: 8px;
+.add-todo button:last-child {
   background: var(--accent);
   border: none;
   border-radius: var(--radius);
-  padding: 6px 12px;
+  padding: 14px 24px;
+  font-size: 1rem;
+  font-weight: 600;
   color: white;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, transform 0.1s;
+  white-space: nowrap;
 }
 
-.todo-item button:hover {
+.add-todo button:last-child:hover {
   background: var(--accent-hover);
+}
+
+.add-todo button:last-child:active {
+  transform: scale(0.97);
 }
