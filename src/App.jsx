@@ -18,6 +18,7 @@ function App() {
     return saved ? JSON.parse(saved) : []
   })
   const [input, setInput] = useState('')
+  const [description, setDescription] = useState('')
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
@@ -28,10 +29,11 @@ function App() {
     e.preventDefault()
     if (!input.trim()) return
     setTodos([
-      { id: Date.now(), text: input.trim(), completed: false },
+      { id: Date.now(), text: input.trim(), description: description.trim(), completed: false },
       ...todos,
     ])
     setInput('')
+    setDescription('')
   }
 
   function toggleTodo(id) {
@@ -54,8 +56,8 @@ function App() {
 
   function downloadCSV() {
     const csvContent = 'data:text/csv;charset=utf-8,' +
-      'Todo Item,Creation Date,Status\n' +
-      todos.map(t => `${t.text},${new Date(t.id).toLocaleString()},${t.completed ? 'Completed' : 'Active'}`).join('\n');
+      'Todo Item,Description,Creation Date,Status\n' +
+      todos.map(t => `${t.text},${t.description},${new Date(t.id).toLocaleString()},${t.completed ? 'Completed' : 'Active'}`).join('\n');
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
@@ -67,6 +69,7 @@ function App() {
   }
 
   const copyButtonEnabled = useFeatureFlag('copy-button-for-tasks');
+  const descriptionFieldEnabled = useFeatureFlag('task-description-field');
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -105,6 +108,14 @@ function App() {
           placeholder="What needs to be done?"
           autoFocus
         />
+        {descriptionFieldEnabled && (
+          <input
+            type="text"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Add a description (optional)"
+          />
+        )}
         <button type="submit">Add</button>
         <button type="button" onClick={downloadCSV}>Download CSV</button>
       </form>
@@ -143,6 +154,9 @@ function App() {
                 onClick={() => toggleTodo(todo.id)}
               />
               <span className={`text ${todo.completed ? 'completed' : ''}`}>{todo.text}</span>
+              {descriptionFieldEnabled && todo.description && (
+                <span className="description">{todo.description.length > 100 ? `${todo.description.substring(0, 100)}...` : todo.description}</span>
+              )}
               {copyButtonEnabled && (
                 <button className="copy-btn" onClick={() => copyToClipboard(todo.text)}>📋</button>
               )}
