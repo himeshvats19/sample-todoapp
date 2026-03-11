@@ -41,6 +41,20 @@ function App() {
   const doneCount = todos.filter(t => t.completed).length
   const activeCount = totalCount - doneCount
 
+  function downloadCSV() {
+    const csvContent = 'data:text/csv;charset=utf-8,' +
+      'Todo Item,Creation Date,Status\n' +
+      todos.map(t => `${t.text},${new Date(t.id).toLocaleString()},${t.completed ? 'Completed' : 'Active'}`).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'todos.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert('Download complete!');
+  }
+
   return (
     <div className="app">
       <header className="header">
@@ -74,6 +88,7 @@ function App() {
           autoFocus
         />
         <button type="submit">Add</button>
+        <button type="button" onClick={downloadCSV}>Download CSV</button>
       </form>
 
       {/* Filters */}
@@ -109,12 +124,8 @@ function App() {
                 className={`checkbox ${todo.completed ? 'checked' : ''}`}
                 onClick={() => toggleTodo(todo.id)}
               />
-              <span className={`text ${todo.completed ? 'completed' : ''}`}>
-                {todo.text}
-              </span>
-              <button className="delete-btn" onClick={() => deleteTodo(todo.id)}>
-                ✕
-              </button>
+              <span className={`text ${todo.completed ? 'completed' : ''}`}>{todo.text}</span>
+              <button className="delete-btn" onClick={() => deleteTodo(todo.id)}>✕</button>
             </li>
           ))}
         </ul>
