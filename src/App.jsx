@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+function useFeatureFlag(flagKey) {
+  const [enabled, setEnabled] = useState(!!window.FeatureStudio?.flags?.[flagKey]);
+  useEffect(() => {
+    const handleFlags = () => setEnabled(!!window.FeatureStudio?.flags?.[flagKey]);
+    window.addEventListener('feature-studio-flags-loaded', handleFlags);
+    handleFlags();
+    return () => window.removeEventListener('feature-studio-flags-loaded', handleFlags);
+  }, [flagKey]);
+  return enabled;
+}
+
 function App() {
   const [todos, setTodos] = useState(() => {
     const saved = localStorage.getItem('todos')
     return saved ? JSON.parse(saved) : []
   })
   const [input, setInput] = useState('')
+  const [description, setDescription] = useState('')
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
@@ -17,10 +29,11 @@ function App() {
     e.preventDefault()
     if (!input.trim()) return
     setTodos([
-      { id: Date.now(), text: input.trim(), completed: false },
+      { id: Date.now(), text: input.trim(), description: description.trim(), completed: false },
       ...todos,
     ])
     setInput('')
+    setDescription('')
   }
 
   function toggleTodo(id) {
@@ -40,6 +53,28 @@ function App() {
   const totalCount = todos.length
   const doneCount = todos.filter(t => t.completed).length
   const activeCount = totalCount - doneCount
+
+  function downloadCSV() {
+    const csvContent = 'data:text/csv;charset=utf-8,' +
+      'Todo Item,Description,Creation Date,Status\n' +
+      todos.map(t => `${t.text},${t.description},${new Date(t.id).toLocaleString()},${t.completed ? 'Completed' : 'Active'}`).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'todos.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert('Download complete!');
+  }
+
+  const copyButtonEnabled = useFeatureFlag('copy-button-for-tasks');
+  const descriptionFieldEnabled = useFeatureFlag('task-description-field');
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert('Copied');
+  };
 
   return (
     <div className="app">
@@ -73,7 +108,16 @@ function App() {
           placeholder="What needs to be done?"
           autoFocus
         />
+        {descriptionFieldEnabled && (
+          <input
+            type="text"
+            value={description}
+            onChange={e => setDescription(e.target.value)}
+            placeholder="Add a description (optional)"
+          />
+        )}
         <button type="submit">Add</button>
+        <button type="button" onClick={downloadCSV}>Download CSV</button>
       </form>
 
       {/* Filters */}
@@ -109,12 +153,14 @@ function App() {
                 className={`checkbox ${todo.completed ? 'checked' : ''}`}
                 onClick={() => toggleTodo(todo.id)}
               />
-              <span className={`text ${todo.completed ? 'completed' : ''}`}>
-                {todo.text}
-              </span>
-              <button className="delete-btn" onClick={() => deleteTodo(todo.id)}>
-                ✕
-              </button>
+              <span className={`text ${todo.completed ? 'completed' : ''}`}>{todo.text}</span>
+              {descriptionFieldEnabled && todo.description && (
+                <span className="description">{todo.description.length > 100 ? `${todo.description.substring(0, 100)}...` : todo.description}</span>
+              )}
+              {copyButtonEnabled && (
+                <button className="copy-btn" onClick={() => copyToClipboard(todo.text)}>📋</button>
+              )}
+              <button className="delete-btn" onClick={() => deleteTodo(todo.id)}>✕</button>
             </li>
           ))}
         </ul>
