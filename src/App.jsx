@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import './App.css'
+import { useState, useEffect } from 'react';
+import './App.css';
 
 function useFeatureFlag(flagKey) {
   const [enabled, setEnabled] = useState(!!window.FeatureStudio?.flags?.[flagKey]);
@@ -12,47 +12,93 @@ function useFeatureFlag(flagKey) {
   return enabled;
 }
 
+function RichTextEditor({ value, onChange }) {
+  const formatText = (format) => {
+    const textarea = document.getElementById('description-editor');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    let formattedText;
+
+    switch (format) {
+      case 'bold':
+        formattedText = `**${selectedText}**`;
+        break;
+      case 'italic':
+        formattedText = `*${selectedText}*`;
+        break;
+      case 'underline':
+        formattedText = `__${selectedText}__`;
+        break;
+      case 'bullet':
+        formattedText = `• ${selectedText}`;
+        break;
+      default:
+        return;
+    }
+
+    onChange(textarea.value.replace(selectedText, formattedText));
+  };
+
+  return (
+    <div>
+      <div>
+        <button onClick={() => formatText('bold')}>Bold</button>
+        <button onClick={() => formatText('italic')}>Italic</button>
+        <button onClick={() => formatText('underline')}>Underline</button>
+        <button onClick={() => formatText('bullet')}>Bullet</button>
+      </div>
+      <textarea
+        id="description-editor"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Add a description (optional)"
+      />
+    </div>
+  );
+}
+
 function App() {
   const [todos, setTodos] = useState(() => {
-    const saved = localStorage.getItem('todos')
-    return saved ? JSON.parse(saved) : []
-  })
-  const [input, setInput] = useState('')
-  const [description, setDescription] = useState('')
-  const [filter, setFilter] = useState('all')
+    const saved = localStorage.getItem('todos');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [input, setInput] = useState('');
+  const [description, setDescription] = useState('');
+  const [filter, setFilter] = useState('all');
 
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos))
-  }, [todos])
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }, [todos]);
 
   function addTodo(e) {
-    e.preventDefault()
-    if (!input.trim()) return
+    e.preventDefault();
+    if (!input.trim()) return;
     setTodos([
       { id: Date.now(), text: input.trim(), description: description.trim(), completed: false },
       ...todos,
-    ])
-    setInput('')
-    setDescription('')
+    ]);
+    setInput('');
+    setDescription('');
   }
 
   function toggleTodo(id) {
-    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
+    setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t));
   }
 
   function deleteTodo(id) {
-    setTodos(todos.filter(t => t.id !== id))
+    setTodos(todos.filter(t => t.id !== id));
   }
 
   const filteredTodos = todos.filter(t => {
-    if (filter === 'active') return !t.completed
-    if (filter === 'completed') return t.completed
-    return true
-  })
+    if (filter === 'active') return !t.completed;
+    if (filter === 'completed') return t.completed;
+    return true;
+  });
 
-  const totalCount = todos.length
-  const doneCount = todos.filter(t => t.completed).length
-  const activeCount = totalCount - doneCount
+  const totalCount = todos.length;
+  const doneCount = todos.filter(t => t.completed).length;
+  const activeCount = totalCount - doneCount;
 
   function downloadCSV() {
     const csvContent = 'data:text/csv;charset=utf-8,' +
@@ -70,6 +116,7 @@ function App() {
 
   const copyButtonEnabled = useFeatureFlag('copy-button-for-tasks');
   const descriptionFieldEnabled = useFeatureFlag('task-description-field');
+  const richTextEditorEnabled = useFeatureFlag('rich-text-editor-for-todo-item');
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
@@ -109,12 +156,16 @@ function App() {
           autoFocus
         />
         {descriptionFieldEnabled && (
-          <input
-            type="text"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Add a description (optional)"
-          />
+          richTextEditorEnabled ? (
+            <RichTextEditor value={description} onChange={setDescription} />
+          ) : (
+            <input
+              type="text"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Add a description (optional)"
+            />
+          )
         )}
         <button type="submit">Add</button>
         <button type="button" onClick={downloadCSV}>Download CSV</button>
@@ -172,7 +223,7 @@ function App() {
         <div className="sdk-badge">⚡ Feature Studio SDK Active</div>
       </footer>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
