@@ -381,9 +381,6 @@ function App() {
                 onClick={() => toggleTodo(todo.id)}
               />
               <span className={`text ${todo.completed ? 'completed' : ''}`}>{todo.text}</span>
-              {descriptionFieldEnabled && todo.description && (
-                <span className="description">{todo.description.length > 100 ? `${todo.description.substring(0, 100)}...` : todo.description}</span>
-              )}
               {copyButtonEnabled && (
                 <button className="copy-btn" onClick={() => copyToClipboard(todo.text)}>📋</button>
               )}
