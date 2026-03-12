@@ -329,25 +329,16 @@ function App() {
 
       {/* Add Todo */}
       <form className="add-todo" onSubmit={addTodo}>
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="What needs to be done?"
-          autoFocus
-        />
-        {descriptionFieldEnabled && (
-          richTextEditorEnabled ? (
-            <RichTextEditor value={description} onChange={setDescription} />
-          ) : (
-            <input
-              type="text"
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Add a description (optional)"
-            />
-          )
-        )}
+        {richTextEditorEnabled ? (
+          <RichTextEditor value={input} onChange={setInput} />
+        ) : (
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder="What needs to be done?"
+            autoFocus
+          />)}
         <button type="submit">Add</button>
         {downloadCsvEnabled && (
           <button type="button" onClick={downloadCSV}>Download CSV</button>
