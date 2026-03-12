@@ -13,6 +13,52 @@ function useFeatureFlag(flagKey) {
   return enabled;
 }
 
+function RichTextEditor({ value, onChange }) {
+  const formatText = (format) => {
+    const textarea = document.getElementById('description-editor');
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const selectedText = textarea.value.substring(start, end);
+    let formattedText;
+
+    switch (format) {
+      case 'bold':
+        formattedText = `**${selectedText}**`;
+        break;
+      case 'italic':
+        formattedText = `*${selectedText}*`;
+        break;
+      case 'underline':
+        formattedText = `__${selectedText}__`;
+        break;
+      case 'bullet':
+        formattedText = `• ${selectedText}`;
+        break;
+      default:
+        return;
+    }
+
+    onChange(textarea.value.replace(selectedText, formattedText));
+  };
+
+  return (
+    <div>
+      <div>
+        <button onClick={() => formatText('bold')}>Bold</button>
+        <button onClick={() => formatText('italic')}>Italic</button>
+        <button onClick={() => formatText('underline')}>Underline</button>
+        <button onClick={() => formatText('bullet')}>Bullet</button>
+      </div>
+      <textarea
+        id="description-editor"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Add a description (optional)"
+      />
+    </div>
+  );
+}
+
 function App() {
   const [session, setSession] = useState(null)
   const [authEmail, setAuthEmail] = useState('')
@@ -62,7 +108,7 @@ function App() {
       // If the SDK has a global re-init function, call it. 
       // Otherwise, the page refresh might be needed, but we'll try to just dispatch an event in case SDK listens
       window.dispatchEvent(new CustomEvent('feature-studio-user-changed', { detail: { userId } }));
-      
+
       // Force a reload of flags if FeatureStudio exists
       if (window.FeatureStudio && window.FeatureStudio.flags) {
         const apiKey = script.getAttribute('data-api-key');
@@ -70,14 +116,14 @@ function App() {
         fetch(`${host}/api/v1/flags/evaluate?api_key=${encodeURIComponent(apiKey)}&user_id=${encodeURIComponent(userId || 'anonymous')}`, {
           method: 'POST'
         })
-        .then(res => res.json())
-        .then(data => {
-          if (data && data.flags) {
-            window.FeatureStudio.flags = data.flags;
-            window.dispatchEvent(new CustomEvent('feature-studio-flags-loaded'));
-          }
-        })
-        .catch(err => console.error('Failed to reload flags', err));
+          .then(res => res.json())
+          .then(data => {
+            if (data && data.flags) {
+              window.FeatureStudio.flags = data.flags;
+              window.dispatchEvent(new CustomEvent('feature-studio-flags-loaded'));
+            }
+          })
+          .catch(err => console.error('Failed to reload flags', err));
       }
     }
   }
@@ -126,13 +172,13 @@ function App() {
   async function addTodo(e) {
     e.preventDefault()
     if (!input.trim() || !session) return
-    
+
     // Optimistic update
-    const newTodo = { 
-      id: crypto.randomUUID(), 
+    const newTodo = {
+      id: crypto.randomUUID(),
       user_id: session.user.id,
-      text: input.trim(), 
-      description: description.trim(), 
+      text: input.trim(),
+      description: description.trim(),
       completed: false,
       created_at: new Date().toISOString()
     };
@@ -148,7 +194,7 @@ function App() {
         description: newTodo.description,
         completed: false
       }])
-    
+
     if (error) {
       console.error(error);
       fetchTodos(); // Revert on failure
@@ -191,14 +237,14 @@ function App() {
   }
 
   const filteredTodos = todos.filter(t => {
-    if (filter === 'active') return !t.completed
-    if (filter === 'completed') return t.completed
-    return true
-  })
+    if (filter === 'active') return !t.completed;
+    if (filter === 'completed') return t.completed;
+    return true;
+  });
 
-  const totalCount = todos.length
-  const doneCount = todos.filter(t => t.completed).length
-  const activeCount = totalCount - doneCount
+  const totalCount = todos.length;
+  const doneCount = todos.filter(t => t.completed).length;
+  const activeCount = totalCount - doneCount;
 
   function downloadCSV() {
     const csvContent = 'data:text/csv;charset=utf-8,' +
@@ -230,16 +276,16 @@ function App() {
           <h1>✨ Todo App Login</h1>
           <p>Sign in to sync your tasks to the cloud.</p>
           <form className="auth-form" onSubmit={handleLogin}>
-            <input 
-              type="email" 
-              placeholder="Email address" 
+            <input
+              type="email"
+              placeholder="Email address"
               value={authEmail}
               onChange={(e) => setAuthEmail(e.target.value)}
               required
             />
-            <input 
-              type="password" 
-              placeholder="Password" 
+            <input
+              type="password"
+              placeholder="Password"
               value={authPassword}
               onChange={(e) => setAuthPassword(e.target.value)}
               required
@@ -291,12 +337,16 @@ function App() {
           autoFocus
         />
         {descriptionFieldEnabled && (
-          <input
-            type="text"
-            value={description}
-            onChange={e => setDescription(e.target.value)}
-            placeholder="Add a description (optional)"
-          />
+          richTextEditorEnabled ? (
+            <RichTextEditor value={description} onChange={setDescription} />
+          ) : (
+            <input
+              type="text"
+              value={description}
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Add a description (optional)"
+            />
+          )
         )}
         <button type="submit">Add</button>
         {downloadCsvEnabled && (
@@ -358,7 +408,7 @@ function App() {
         <div className="sdk-badge">⚡ Feature Studio SDK Active</div>
       </footer>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
