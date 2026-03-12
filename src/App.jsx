@@ -261,7 +261,7 @@ function App() {
   }
 
   const copyButtonEnabled = useFeatureFlag('copy-button-for-tasks');
-  const descriptionFieldEnabled = useFeatureFlag('task-description-field');
+  const downloadCsvEnabled = useFeatureFlag('download-csv-button');
   const richTextEditorEnabled = useFeatureFlag('rich-text-editor-for-todo-item');
 
   const copyToClipboard = (text) => {
