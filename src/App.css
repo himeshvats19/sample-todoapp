@@ -114,10 +114,45 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  gap: 16px;
 }
 
 .header-top h1 {
   margin-bottom: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.header-clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-card);
+  box-shadow: var(--shadow);
+}
+
+.header-clock-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+
+.header-clock-value {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
 }
 
 .sign-out-btn {
@@ -134,4 +169,20 @@
 .sign-out-btn:hover {
   background: var(--bg-input);
   color: var(--text-primary);
+}
+
+@media (max-width: 640px) {
+  .header-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: space-between;
+  }
+
+  .header-clock {
+    flex: 1;
+    justify-content: center;
+  }
 }

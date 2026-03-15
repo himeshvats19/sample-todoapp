@@ -13,6 +13,42 @@ function useFeatureFlag(flagKey) {
   return enabled;
 }
 
+function HeaderDigitalClock() {
+  const isEnabled = useFeatureFlag('header-digital-clock')
+  const [currentTime, setCurrentTime] = useState(() =>
+    new Date().toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    })
+  )
+
+  useEffect(() => {
+    if (!isEnabled) return undefined
+
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(
+        new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      )
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [isEnabled])
+
+  if (!isEnabled) return null
+
+  return (
+    <div className="header-clock" aria-label="Current time" title="Current local time">
+      <span className="header-clock-label">Time</span>
+      <span className="header-clock-value">{currentTime}</span>
+    </div>
+  )
+}
+
 function RichTextEditor({ value, onChange }) {
   const formatText = (format) => {
     const textarea = document.getElementById('description-editor');
@@ -60,44 +96,53 @@ function RichTextEditor({ value, onChange }) {
 }
 
 function App() {
-  const [session, setSession] = useState(null)
-  const [authEmail, setAuthEmail] = useState('')
-  const [authPassword, setAuthPassword] = useState('')
+  const [session, setSession] = useState({
+    user: {
+      id: 'demo-user-id',
+      email: 'demo@featurestudio.dev',
+    },
+  })
+  const [authEmail, setAuthEmail] = useState('demo@featurestudio.dev')
+  const [authPassword, setAuthPassword] = useState('password123')
   const [authError, setAuthError] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
 
-  const [todos, setTodos] = useState([])
+  const [todos, setTodos] = useState([
+    {
+      id: '1',
+      user_id: 'demo-user-id',
+      text: 'Review today\'s priorities',
+      description: 'Check deadlines and organize the most important tasks first.',
+      completed: false,
+      created_at: '2026-03-15T09:00:00.000Z',
+    },
+    {
+      id: '2',
+      user_id: 'demo-user-id',
+      text: 'Prepare product update notes',
+      description: 'Summarize the latest improvements for the team sync.',
+      completed: true,
+      created_at: '2026-03-14T14:30:00.000Z',
+    },
+    {
+      id: '3',
+      user_id: 'demo-user-id',
+      text: 'Plan next sprint tasks',
+      description: 'Outline upcoming work items and estimate effort.',
+      completed: false,
+      created_at: '2026-03-13T11:15:00.000Z',
+    },
+  ])
   const [input, setInput] = useState('')
   const [description, setDescription] = useState('')
   const [filter, setFilter] = useState('all')
   const [fetchingTodos, setFetchingTodos] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session)
-      updateSDKUserId(session?.user?.email)
-    })
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session)
-      updateSDKUserId(session?.user?.email)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    if (session) {
-      fetchTodos()
-    } else {
-      setTodos([])
-    }
+    updateSDKUserId(session?.user?.email)
   }, [session])
 
   function updateSDKUserId(userId) {
-    // Look for the Feature Studio script tag
     const script = document.querySelector('script[data-api-key]');
     if (script) {
       if (userId) {
@@ -105,26 +150,7 @@ function App() {
       } else {
         script.setAttribute('data-user-id', 'anonymous');
       }
-      // If the SDK has a global re-init function, call it. 
-      // Otherwise, the page refresh might be needed, but we'll try to just dispatch an event in case SDK listens
       window.dispatchEvent(new CustomEvent('feature-studio-user-changed', { detail: { userId } }));
-
-      // Force a reload of flags if FeatureStudio exists
-      if (window.FeatureStudio && window.FeatureStudio.flags) {
-        const apiKey = script.getAttribute('data-api-key');
-        const host = 'https://scratch-ten-taupe.vercel.app';
-        fetch(`${host}/api/v1/flags/evaluate?api_key=${encodeURIComponent(apiKey)}&user_id=${encodeURIComponent(userId || 'anonymous')}`, {
-          method: 'POST'
-        })
-          .then(res => res.json())
-          .then(data => {
-            if (data && data.flags) {
-              window.FeatureStudio.flags = data.flags;
-              window.dispatchEvent(new CustomEvent('feature-studio-flags-loaded'));
-            }
-          })
-          .catch(err => console.error('Failed to reload flags', err));
-      }
     }
   }
 
@@ -132,40 +158,32 @@ function App() {
     e.preventDefault()
     setAuthLoading(true)
     setAuthError('')
-    const { error } = await supabase.auth.signUp({
-      email: authEmail,
-      password: authPassword,
-    })
-    if (error) setAuthError(error.message)
-    else setAuthError('Check your email for the login link!')
-    setAuthLoading(false)
+    setTimeout(() => {
+      setAuthError('Demo mode: sign up is disabled in preview.')
+      setAuthLoading(false)
+    }, 300)
   }
 
   async function handleLogin(e) {
     e.preventDefault()
     setAuthLoading(true)
     setAuthError('')
-    const { error } = await supabase.auth.signInWithPassword({
-      email: authEmail,
-      password: authPassword,
-    })
-    if (error) setAuthError(error.message)
-    setAuthLoading(false)
+    setTimeout(() => {
+      setSession({
+        user: {
+          id: 'demo-user-id',
+          email: authEmail || 'demo@featurestudio.dev',
+        },
+      })
+      setAuthLoading(false)
+    }, 300)
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut()
+    setSession(null)
   }
 
   async function fetchTodos() {
-    setFetchingTodos(true)
-    const { data, error } = await supabase
-      .from('todos')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (!error && data) {
-      setTodos(data)
-    }
     setFetchingTodos(false)
   }
 
@@ -173,7 +191,6 @@ function App() {
     e.preventDefault()
     if (!input.trim() || !session) return
 
-    // Optimistic update
     const newTodo = {
       id: crypto.randomUUID(),
       user_id: session.user.id,
@@ -185,55 +202,17 @@ function App() {
     setTodos([newTodo, ...todos])
     setInput('')
     setDescription('')
-
-    const { error } = await supabase
-      .from('todos')
-      .insert([{
-        user_id: session.user.id,
-        text: newTodo.text,
-        description: newTodo.description,
-        completed: false
-      }])
-
-    if (error) {
-      console.error(error);
-      fetchTodos(); // Revert on failure
-    }
   }
 
   async function toggleTodo(id) {
     const todo = todos.find(t => t.id === id);
     if (!todo) return;
 
-    // Optimistic
     setTodos(todos.map(t => t.id === id ? { ...t, completed: !t.completed } : t))
-
-    const { error } = await supabase
-      .from('todos')
-      .update({ completed: !todo.completed })
-      .eq('id', id)
-      .eq('user_id', session.user.id)
-
-    if (error) {
-      console.error(error);
-      fetchTodos();
-    }
   }
 
   async function deleteTodo(id) {
-    // Optimistic
     setTodos(todos.filter(t => t.id !== id))
-
-    const { error } = await supabase
-      .from('todos')
-      .delete()
-      .eq('id', id)
-      .eq('user_id', session.user.id)
-
-    if (error) {
-      console.error(error);
-      fetchTodos();
-    }
   }
 
   const filteredTodos = todos.filter(t => {
@@ -306,12 +285,14 @@ function App() {
       <header className="header">
         <div className="header-top">
           <h1>✨ Todo App</h1>
-          <button className="sign-out-btn" onClick={handleSignOut}>Sign Out</button>
+          <div className="header-actions">
+            <HeaderDigitalClock />
+            <button className="sign-out-btn" onClick={handleSignOut}>Sign Out</button>
+          </div>
         </div>
         <p>Stay organized, get things done</p>
       </header>
 
-      {/* Stats */}
       <div className="stats">
         <div className="stat-card">
           <div className="number">{totalCount}</div>
@@ -327,7 +308,6 @@ function App() {
         </div>
       </div>
 
-      {/* Add Todo */}
       <form className="add-todo" onSubmit={addTodo}>
         {richTextEditorEnabled ? (
           <RichTextEditor value={input} onChange={setInput} />
@@ -345,7 +325,6 @@ function App() {
         )}
       </form>
 
-      {/* Filters */}
       <div className="filters">
         {['all', 'active', 'completed'].map(f => (
           <button
@@ -358,7 +337,6 @@ function App() {
         ))}
       </div>
 
-      {/* Todo List */}
       {fetchingTodos ? (
         <div className="empty-state"><p>Loading tasks...</p></div>
       ) : filteredTodos.length === 0 ? (
@@ -390,7 +368,6 @@ function App() {
         </ul>
       )}
 
-      {/* Footer with SDK badge */}
       <footer className="footer">
         <p>Powered by Feature Studio</p>
         <div className="sdk-badge">⚡ Feature Studio SDK Active</div>
